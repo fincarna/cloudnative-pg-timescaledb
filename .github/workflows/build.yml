@@ -58,6 +58,7 @@ jobs:
         with:
           context: .
           push: true
+          provenance: false
           build-args: |
             PG_MAJOR=${{ steps.versions.outputs.pg_major }}
             TIMESCALEDB_VERSION=${{ steps.versions.outputs.timescaledb_version }}
