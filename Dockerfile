@@ -23,9 +23,12 @@ RUN set -ex; \
         postgresql-common \
     ; \
     rm -rf /var/lib/apt/lists/*; \
-    # Set postgres user UID to 26 (CloudNativePG convention)
+    # Set postgres user/group to UID/GID 26 (CloudNativePG convention)
+    # Remove the 'tape' group which occupies GID 26 on Debian
+    groupdel tape; \
     usermod -u 26 postgres; \
-    groupmod -g 26 postgres
+    groupmod -g 26 postgres; \
+    chown -R postgres:postgres /var/lib/postgresql
 
 ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
@@ -51,7 +54,7 @@ RUN set -ex; \
     apt-get update; \
     # Install TimescaleDB
     apt-get install -y --no-install-recommends \
-        timescaledb-2-postgresql-${PG_MAJOR}=${TIMESCALEDB_VERSION}~debian12 \
+        timescaledb-2-postgresql-${PG_MAJOR}=${TIMESCALEDB_VERSION}~debian12* \
     ; \
     # Install pgAudit from PGDG
     apt-get install -y --no-install-recommends \
