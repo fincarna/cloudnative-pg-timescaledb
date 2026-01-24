@@ -69,12 +69,18 @@ ARG BARMAN_VERSION=3.17.0
 
 RUN set -ex; \
     apt-get update; \
+    # Ensure all system packages have latest security patches
+    apt-get upgrade -y; \
     apt-get install -y --no-install-recommends \
         python3 \
         python3-pip \
         python3-dev \
         gcc \
         libpq-dev \
+    ; \
+    # Upgrade wheel to fix CVE-2026-24049 (file permission vulnerability)
+    pip3 install --break-system-packages --no-cache-dir \
+        "wheel>=0.46.2" \
     ; \
     pip3 install --break-system-packages --no-cache-dir \
         "barman[cloud,azure,snappy,google,zstandard,lz4]==${BARMAN_VERSION}" \
@@ -84,8 +90,11 @@ RUN set -ex; \
         python3-dev \
         gcc \
     ; \
+    # Remove pip and wheel (no longer needed at runtime)
+    pip3 install --break-system-packages --no-cache-dir pip==0.1 2>/dev/null || true; \
+    apt-get purge -y --auto-remove python3-pip; \
     apt-get clean; \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* /root/.cache /usr/lib/python3/dist-packages/wheel*
 
 # Ensure directories have correct ownership
 RUN set -ex; \
