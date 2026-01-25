@@ -14,6 +14,7 @@ ghcr.io/fincarna/cloudnative-pg-timescaledb:18-2.24.0
 |-----------|---------|
 | PostgreSQL | 18 |
 | TimescaleDB | 2.24.0 |
+| TimescaleDB Toolkit | 1.22.0 |
 | pgAudit | 18.0 |
 | pg_textsearch | 0.4.1 |
 | barman-cloud | 3.17.0 |
@@ -38,6 +39,7 @@ spec:
     initdb:
       postInitTemplateSQL:
         - CREATE EXTENSION IF NOT EXISTS timescaledb;
+        - CREATE EXTENSION IF NOT EXISTS timescaledb_toolkit;
         - CREATE EXTENSION IF NOT EXISTS pgaudit;
         - CREATE EXTENSION IF NOT EXISTS pg_textsearch;
 

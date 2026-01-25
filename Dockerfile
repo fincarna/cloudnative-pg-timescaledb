@@ -40,11 +40,12 @@ ENV LC_ALL=en_US.UTF-8
 ENV PATH="/usr/lib/postgresql/${PG_MAJOR}/bin:${PATH}"
 ENV PGDATA=/var/lib/postgresql/data
 
-# Stage 2: Extensions (TimescaleDB + pgAudit + pg_textsearch)
+# Stage 2: Extensions (TimescaleDB + Toolkit + pgAudit + pg_textsearch)
 FROM base AS extensions
 
 ARG PG_MAJOR=18
 ARG TIMESCALEDB_VERSION=2.24.0
+ARG TIMESCALEDB_TOOLKIT_VERSION=1.22.0
 ARG PG_TEXTSEARCH_VERSION=0.4.1
 ARG TARGETARCH
 
@@ -63,6 +64,10 @@ RUN set -ex; \
     # Install TimescaleDB
     apt-get install -y --no-install-recommends \
         timescaledb-2-postgresql-${PG_MAJOR}=${TIMESCALEDB_VERSION}~debian12* \
+    ; \
+    # Install TimescaleDB Toolkit
+    apt-get install -y --no-install-recommends \
+        timescaledb-toolkit-postgresql-${PG_MAJOR} \
     ; \
     # Install pgAudit from PGDG
     apt-get install -y --no-install-recommends \

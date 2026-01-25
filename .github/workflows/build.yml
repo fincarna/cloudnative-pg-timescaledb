@@ -47,6 +47,7 @@ jobs:
           fi
           echo "barman_version=$(jq -r '.BARMAN_VERSION' versions.json)" >> "$GITHUB_OUTPUT"
           echo "pg_textsearch_version=$(jq -r '.PG_TEXTSEARCH_VERSION' versions.json)" >> "$GITHUB_OUTPUT"
+          echo "timescaledb_toolkit_version=$(jq -r '.TIMESCALEDB_TOOLKIT_VERSION' versions.json)" >> "$GITHUB_OUTPUT"
 
       - name: Set platform pair
         id: platform
@@ -87,6 +88,7 @@ jobs:
           build-args: |
             PG_MAJOR=${{ steps.versions.outputs.pg_major }}
             TIMESCALEDB_VERSION=${{ steps.versions.outputs.timescaledb_version }}
+            TIMESCALEDB_TOOLKIT_VERSION=${{ steps.versions.outputs.timescaledb_toolkit_version }}
             PG_TEXTSEARCH_VERSION=${{ steps.versions.outputs.pg_textsearch_version }}
             BARMAN_VERSION=${{ steps.versions.outputs.barman_version }}
           outputs: type=image,name=${{ env.GHCR_IMAGE }},push-by-digest=true,name-canonical=true,push=true
