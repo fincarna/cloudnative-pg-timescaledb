@@ -41,6 +41,7 @@ jobs:
             echo "timescaledb_version=$(jq -r '.TIMESCALEDB_VERSION' versions.json)" >> "$GITHUB_OUTPUT"
           fi
           echo "barman_version=$(jq -r '.BARMAN_VERSION' versions.json)" >> "$GITHUB_OUTPUT"
+          echo "pg_textsearch_version=$(jq -r '.PG_TEXTSEARCH_VERSION' versions.json)" >> "$GITHUB_OUTPUT"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -71,6 +72,7 @@ jobs:
           build-args: |
             PG_MAJOR=${{ steps.versions.outputs.pg_major }}
             TIMESCALEDB_VERSION=${{ steps.versions.outputs.timescaledb_version }}
+            PG_TEXTSEARCH_VERSION=${{ steps.versions.outputs.pg_textsearch_version }}
             BARMAN_VERSION=${{ steps.versions.outputs.barman_version }}
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.versions.outputs.pg_major }}-${{ steps.versions.outputs.timescaledb_version }}
