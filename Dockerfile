@@ -1,6 +1,10 @@
 # Stage 1: Base PostgreSQL installation
 FROM debian:bookworm-slim AS base
 
+LABEL org.opencontainers.image.source="https://github.com/fincarna/cloudnative-pg-timescaledb"
+LABEL org.opencontainers.image.description="CloudNativePG-compatible PostgreSQL with TimescaleDB, pgAudit, pg_textsearch, and barman-cloud"
+LABEL org.opencontainers.image.licenses="Apache-2.0"
+
 ARG PG_MAJOR=18
 
 RUN set -ex; \
