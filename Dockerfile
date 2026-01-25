@@ -14,6 +14,7 @@ RUN set -ex; \
         curl \
         gnupg \
         locales \
+        gosu \
     ; \
     # Generate locale
     sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen; \
@@ -109,6 +110,10 @@ RUN set -ex; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/* /root/.cache /usr/lib/python3/dist-packages/wheel*
 
+# Add entrypoint script for standalone usage
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Ensure directories have correct ownership
 RUN set -ex; \
     mkdir -p /var/run/postgresql; \
@@ -119,3 +124,6 @@ RUN set -ex; \
     chmod 700 "$PGDATA"
 
 USER 26
+
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["postgres"]
