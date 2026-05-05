@@ -1,6 +1,6 @@
 # CloudNativePG TimescaleDB
 
-A CloudNativePG-compatible PostgreSQL container image with TimescaleDB, pgAudit, pg_textsearch, and barman-cloud backup support.
+A CloudNativePG-compatible PostgreSQL container image with TimescaleDB, pgAudit, pg_textsearch, pgmq, pg_partman, and barman-cloud backup support.
 
 ## Image
 
@@ -17,6 +17,8 @@ ghcr.io/fincarna/cloudnative-pg-timescaledb:18-2.24.0
 | TimescaleDB Toolkit | 1.22.0 |
 | pgAudit | 18.0 |
 | pg_textsearch | 0.4.1 |
+| pgmq | 1.8.0 |
+| pg_partman | 5.1.0 |
 | barman-cloud | 3.17.0 |
 
 ## Usage with CloudNativePG
@@ -42,6 +44,10 @@ spec:
         - CREATE EXTENSION IF NOT EXISTS timescaledb_toolkit;
         - CREATE EXTENSION IF NOT EXISTS pgaudit;
         - CREATE EXTENSION IF NOT EXISTS pg_textsearch;
+        # pg_partman is pgmq's runtime dependency for queue partitioning;
+        # it must be created before pgmq.
+        - CREATE EXTENSION IF NOT EXISTS pg_partman;
+        - CREATE EXTENSION IF NOT EXISTS pgmq;
 
   storage:
     size: 10Gi

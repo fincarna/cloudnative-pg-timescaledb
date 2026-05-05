@@ -2,7 +2,7 @@
 FROM debian:bookworm-slim AS base
 
 LABEL org.opencontainers.image.source="https://github.com/fincarna/cloudnative-pg-timescaledb"
-LABEL org.opencontainers.image.description="CloudNativePG-compatible PostgreSQL with TimescaleDB, pgAudit, pg_textsearch, and barman-cloud"
+LABEL org.opencontainers.image.description="CloudNativePG-compatible PostgreSQL with TimescaleDB, pgAudit, pg_textsearch, pgmq, pg_partman, and barman-cloud"
 LABEL org.opencontainers.image.licenses="Apache-2.0"
 
 ARG PG_MAJOR=18
@@ -40,13 +40,15 @@ ENV LC_ALL=en_US.UTF-8
 ENV PATH="/usr/lib/postgresql/${PG_MAJOR}/bin:${PATH}"
 ENV PGDATA=/var/lib/postgresql/data
 
-# Stage 2: Extensions (TimescaleDB + Toolkit + pgAudit + pg_textsearch)
+# Stage 2: Extensions (TimescaleDB + Toolkit + pgAudit + pg_textsearch + pgmq + pg_partman)
 FROM base AS extensions
 
 ARG PG_MAJOR=18
 ARG TIMESCALEDB_VERSION=2.24.0
 ARG TIMESCALEDB_TOOLKIT_VERSION=1.22.0
 ARG PG_TEXTSEARCH_VERSION=0.4.1
+ARG PGMQ_VERSION=v1.8.0
+ARG PG_PARTMAN_VERSION=v5.1.0
 ARG TARGETARCH
 
 RUN set -ex; \
@@ -79,6 +81,51 @@ RUN set -ex; \
     dpkg -i /tmp/pg_textsearch/*.deb; \
     rm -rf /tmp/pg_textsearch /tmp/pg_textsearch.zip; \
     apt-get purge -y --auto-remove unzip; \
+    rm -rf /var/lib/apt/lists/*
+
+# Build + install pgmq and pg_partman from source. pgmq v1.8.0 (Mar 2026)
+# dropped pgrx in favor of a pure-SQL extension that also added PG18
+# support; pg_partman is its runtime dependency for queue partitioning.
+# Build dependencies are installed and removed inside this single RUN
+# layer so they don't bloat the image.
+#
+# pgmq quirk: the Makefile generates `sql/pgmq--$(EXTVERSION).sql` (the
+# CREATE EXTENSION install script) at build-time via `cp`, but its
+# install target's DATA list is captured before the `cp` runs — so the
+# per-version base install file is built but not installed. Without
+# the explicit copy below, `CREATE EXTENSION pgmq` fails with "no
+# installation script for version $EXTVERSION".
+RUN set -ex; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        git \
+        postgresql-server-dev-${PG_MAJOR} \
+    ; \
+    # pg_partman — pgmq's runtime dependency. NO_BGW=1 skips the
+    # background-worker shared library; pgmq calls partman's SQL
+    # maintenance functions on demand, so the BGW isn't required.
+    git clone --depth 1 --branch "${PG_PARTMAN_VERSION}" \
+        https://github.com/pgpartman/pg_partman.git /tmp/pg_partman; \
+    make -C /tmp/pg_partman NO_BGW=1 install; \
+    rm -rf /tmp/pg_partman; \
+    # pgmq — pure SQL, no Rust toolchain.
+    git clone --depth 1 --branch "${PGMQ_VERSION}" \
+        https://github.com/pgmq/pgmq.git /tmp/pgmq; \
+    make -C /tmp/pgmq/pgmq-extension install; \
+    PGMQ_EXTVERSION=$(grep "^default_version" /tmp/pgmq/pgmq-extension/pgmq.control \
+        | sed -r "s/default_version[^']+'([^']+).*/\1/"); \
+    install -m 644 \
+        "/tmp/pgmq/pgmq-extension/sql/pgmq--${PGMQ_EXTVERSION}.sql" \
+        "/usr/share/postgresql/${PG_MAJOR}/extension/"; \
+    rm -rf /tmp/pgmq; \
+    # Drop build deps so they don't carry into the runtime image.
+    apt-get purge -y --auto-remove \
+        build-essential \
+        git \
+        postgresql-server-dev-${PG_MAJOR} \
+    ; \
+    apt-get clean; \
     rm -rf /var/lib/apt/lists/*
 
 # Stage 3: Barman Cloud for backup support
